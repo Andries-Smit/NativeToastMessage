@@ -1,61 +1,65 @@
-import { Component, ReactNode, createElement } from "react";
+import { ReactNode, createElement, useCallback } from "react";
 
 import { NativeToastMessageProps } from "../typings/NativeToastMessageProps";
 import { NativeToastMessageInput } from "./components/NativeToastMessageInput";
-import { BadgeStyle } from "./ui/styles";
+import { flattenStyles } from "./Utils/Styles";
+import { ToastStyle, defaultToastStyle } from "./ui/styles";
 
-export class NativeToastMessage extends Component<NativeToastMessageProps<BadgeStyle>> {
-    private toastOnPressHandle = this.toastOnPress.bind(this);
-    private toastOnHideHandle = this.toastOnHide.bind(this);
-   
-    private toastOnPress(whenPressed: boolean): void {
-       
-        if (whenPressed && this.props.whenPress && this.props.whenPress.canExecute) {
-            this.props.whenPress.execute();
-            }
-    }
+const toastTypes = ["success", "info", "warning", "error", "plain"];
 
-    private toastOnHide(whenHidden: boolean): void {
-      
-        if (whenHidden && this.props.whenHide && this.props.whenHide.canExecute) {
-            this.props.whenHide.execute();
+export function NativeToastMessage(props: NativeToastMessageProps<ToastStyle>): ReactNode {
+    const styles = flattenStyles(defaultToastStyle, props.style) as ToastStyle;
+
+    const toastOnPress = useCallback(
+        (whenPressed: boolean): void => {
+            if (whenPressed && props.whenPress && props.whenPress.canExecute) {
+                props.whenPress.execute();
             }
-    }
-   
-    render(): ReactNode {
-        
-        const type = this.props.typeKey?.value || 'success';
-        const text1 = this.props.text1Key.value || 'This is text1';
-        const text2 = this.props.text2Key.value || 'This is text2';
-        const positionValue = this.props.positionKey?.value || 'top';
-        const visibilityTime = Number(this.props.visibilityTimeKey?.value) || 4000;
-        let autohide =  true;
-        if(this.props.autoHideKey?.value == false){
-            autohide=false
-        }
-        const topOffset = Number(this.props.topOffsetKey?.value) || 40;
-        const bottomOffset = Number(this.props.bottomOffsetKey?.value) || 40;
-        const keyboardOffset = Number(this.props.keyboardOffsetKey?.value) || 10;
-        const animationType=this.props.animationTypeKey;
-        
+            props.showAttribute.setValue(false);
+        },
+        [props.showAttribute, props.whenPress]
+    );
+
+    const toastOnHide = useCallback(
+        (whenHidden: boolean): void => {
+            if (whenHidden && props.whenHide && props.whenHide.canExecute) {
+                props.whenHide.execute();
+            }
+            props.showAttribute.setValue(false);
+        },
+        [props.showAttribute, props.whenHide]
+    );
+
+    const type = (toastTypes.includes(props.typeKey?.value ?? "") ? props.typeKey?.value : "success") || "success";
+    const text1 = props.text1Key.value || "";
+    const text2 = props.text2Key.value || "";
+    const visibilityTime = Number(props.visibilityTimeKey?.value) || 4000;
+    const autoHide = props.autoHideKey?.value !== false;
+    const topOffset = Number(props.topOffsetKey?.value) || 40;
+    const bottomOffset = Number(props.bottomOffsetKey?.value) || 40;
+    const keyboardOffset = Number(props.keyboardOffsetKey?.value) || 10;
+    const animationType = props.animationTypeKey || "none";
+    const position = props.positionKey?.value === "bottom" ? "bottom" : "top";
+
+    if (props.showAttribute.value) {
         return (
             <NativeToastMessageInput
                 type={type}
                 text1={text1}
                 text2={text2}
-                position={positionValue != 'top' ? 'bottom' : 'top'}
+                position={position}
                 visibilityTime={visibilityTime}
-                autoHide={autohide}
+                autoHide={autoHide}
                 topOffset={topOffset}
                 bottomOffset={bottomOffset}
                 keyboardOffset={keyboardOffset}
-                toastWhenPressed={this.toastOnPressHandle}
-                toastWhenHidden={this.toastOnHideHandle}
+                toastWhenPressed={toastOnPress}
+                toastWhenHidden={toastOnHide}
                 animationType={animationType}
-               
+                style={styles}
             />
         );
+    } else {
+        return null;
     }
-
-
 }

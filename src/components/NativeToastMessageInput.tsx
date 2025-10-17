@@ -1,80 +1,105 @@
+import { ReactNode, useCallback, useEffect, useState, createElement } from "react";
+import { Modal, ModalProps, TouchableWithoutFeedback, View } from "react-native";
+import Toast, {
+    BaseToast,
+    BaseToastProps,
+    ToastConfig,
+    SuccessToast,
+    ErrorToast,
+    InfoToast
+} from "react-native-toast-message";
 
-import { Component, ReactNode, createElement } from "react";
-import Toast from 'react-native-toast-message';
-import { Modal } from "react-native";
+import { ToastStyle, ToastStyleLib } from "../ui/styles";
 
 export interface NativeToastMessageProps {
-  type: string
-  text1: string;
-  text2: string;
-  position: 'top' | 'bottom';
-  visibilityTime?: number;
-  autoHide?: boolean;
-  topOffset?: number;
-  bottomOffset?: number;
-  keyboardOffset?: number;
-  toastWhenPressed: (whenPressed: boolean) => void;
-  toastWhenHidden: (whenHidden: boolean) => void;
-  animationType: string;
-}
-interface InputState {
-  isToastVisible?: boolean;
-
+    type: string;
+    text1: string;
+    text2: string;
+    position: "top" | "bottom";
+    visibilityTime?: number;
+    autoHide?: boolean;
+    topOffset?: number;
+    bottomOffset?: number;
+    keyboardOffset?: number;
+    toastWhenPressed: (whenPressed: boolean) => void;
+    toastWhenHidden: (whenHidden: boolean) => void;
+    animationType: ModalProps["animationType"];
+    style?: ToastStyle;
 }
 
+const mergeStyle = (props: BaseToastProps, extraStyle?: ToastStyleLib): BaseToastProps => {
+    const p = props;
+    if (extraStyle?.leadingBorder) {
+        p.style = extraStyle?.leadingBorder;
+    }
+    if (extraStyle?.content) {
+        p.contentContainerStyle = extraStyle?.content;
+    }
+    if (extraStyle?.title) {
+        p.text1Style = extraStyle?.title;
+    }
+    if (extraStyle?.body) {
+        p.text2Style = extraStyle?.body;
+    }
+    return p;
+};
 
-export class NativeToastMessageInput extends Component<NativeToastMessageProps, InputState> {
+export function NativeToastMessageInput(props: NativeToastMessageProps): ReactNode {
+    const [isToastVisible, setIsToastVisible] = useState(false);
+    const toastStyle = props.style?.toast ?? {};
 
-  readonly state: InputState = { isToastVisible: false };
+    const toastConfig: ToastConfig = {
+        success: (props: BaseToastProps) => <SuccessToast {...mergeStyle(props, toastStyle.success)} />,
+        info: (props: BaseToastProps) => <InfoToast {...mergeStyle(props, toastStyle.info)} />,
+        warning: (props: BaseToastProps) => <BaseToast {...mergeStyle(props, toastStyle.waning)} />,
+        error: (props: BaseToastProps) => <ErrorToast {...mergeStyle(props, toastStyle.error)} />,
+        plain: (props: BaseToastProps) => <BaseToast {...mergeStyle(props, toastStyle.plain)} />
+    };
 
-  componentDidMount(): void {
-    this.toastOnPress = this.toastOnPress.bind(this);
-    this.toastOnHide = this.toastOnHide.bind(this);
+    const toastOnPress = useCallback((): void => {
+        props.toastWhenPressed(true);
+        if (props.autoHide === false) {
+            Toast.hide();
+        }
+    }, [props]);
 
-    this.setState({ isToastVisible: true });
-  }
-  render(): ReactNode {
+    const toastOnHide = useCallback((): void => {
+        setIsToastVisible(false);
+        props.toastWhenHidden(true);
+    }, [props]);
+
+    useEffect(() => {
+        setIsToastVisible(true);
+    }, []);
+
+    useEffect(() => {
+        if (isToastVisible) {
+            Toast.show({
+                type: props.type,
+                text1: props.text1,
+                text2: props.text2,
+                position: props.position,
+                visibilityTime: props.visibilityTime,
+                autoHide: props.autoHide,
+                topOffset: props.topOffset,
+                bottomOffset: props.bottomOffset,
+                keyboardOffset: props.keyboardOffset,
+                onPress: toastOnPress,
+                onHide: toastOnHide
+            });
+        }
+    }, [isToastVisible, props, toastOnHide, toastOnPress]);
+
+    const transparent = props.style?.modal?.transparent ?? true;
+    const backdropColor = transparent ? "rgba(0, 0, 0, 0.0)" : props.style?.modal?.backdropColor;
 
     return (
-      <Modal visible={this.state.isToastVisible}
-        animationType={this.props.animationType != 'none' ? ((this.props.animationType != 'slide') ? 'fade' : 'slide') : 'none'}
-        transparent={true}>
-        {this.showToast()}
-      </Modal>
-
+        <Modal visible={isToastVisible} animationType={props.animationType} transparent onRequestClose={toastOnHide}>
+            <TouchableWithoutFeedback onPress={toastOnHide}>
+                <View style={{ flex: 1, backgroundColor: backdropColor }}>
+                    <Toast config={toastConfig} />
+                </View>
+            </TouchableWithoutFeedback>
+        </Modal>
     );
-  }
-
-  showToast = () => {
-
-    Toast.show({
-      type: this.props.type,
-      text1: this.props.text1,
-      text2: this.props.text2,
-      position: this.props.position,
-      visibilityTime: this.props.visibilityTime,
-      autoHide: this.props.autoHide,
-      topOffset: this.props.topOffset,
-      bottomOffset: this.props.bottomOffset,
-      keyboardOffset: this.props.keyboardOffset,
-      onPress: this.toastOnPress,
-      onHide: this.toastOnHide,
-
-
-    });
-    return <Toast />
-  }
-
-  private toastOnPress(): void {
-    this.props.toastWhenPressed(true);
-    if (this.props.autoHide == false) {
-      Toast.hide();
-    }
-  }
-
-  private toastOnHide(): void {
-    this.setState({ isToastVisible: false });
-    this.props.toastWhenHidden(true);
-  }
-
 }

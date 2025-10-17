@@ -4,7 +4,7 @@
  * @author Mendix Widgets Framework Team
  */
 import { CSSProperties } from "react";
-import { ActionValue, EditableValue } from "mendix";
+import { ActionValue, DynamicValue, EditableValue } from "mendix";
 import { Big } from "big.js";
 
 export type AnimationTypeKeyEnum = "none" | "slide" | "fade";
@@ -12,15 +12,16 @@ export type AnimationTypeKeyEnum = "none" | "slide" | "fade";
 export interface NativeToastMessageProps<Style> {
     name: string;
     style: Style[];
-    typeKey?: EditableValue<string>;
+    typeKey?: DynamicValue<string>;
     text1Key: EditableValue<string>;
     text2Key: EditableValue<string>;
-    positionKey?: EditableValue<string>;
-    visibilityTimeKey?: EditableValue<Big>;
-    autoHideKey?: EditableValue<boolean>;
-    topOffsetKey?: EditableValue<Big>;
-    bottomOffsetKey?: EditableValue<Big>;
-    keyboardOffsetKey?: EditableValue<Big>;
+    positionKey?: DynamicValue<string>;
+    visibilityTimeKey?: DynamicValue<Big>;
+    autoHideKey?: DynamicValue<boolean>;
+    showAttribute: EditableValue<boolean>;
+    topOffsetKey?: DynamicValue<Big>;
+    bottomOffsetKey?: DynamicValue<Big>;
+    keyboardOffsetKey?: DynamicValue<Big>;
     animationTypeKey: AnimationTypeKeyEnum;
     whenPress?: ActionValue;
     whenHide?: ActionValue;
@@ -35,12 +36,15 @@ export interface NativeToastMessagePreviewProps {
     style: string;
     styleObject?: CSSProperties;
     readOnly: boolean;
+    renderMode: "design" | "xray" | "structure";
+    translate: (text: string) => string;
     typeKey: string;
     text1Key: string;
     text2Key: string;
     positionKey: string;
     visibilityTimeKey: string;
     autoHideKey: string;
+    showAttribute: string;
     topOffsetKey: string;
     bottomOffsetKey: string;
     keyboardOffsetKey: string;
